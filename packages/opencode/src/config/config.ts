@@ -24,21 +24,23 @@ import { InstanceState } from "@/effect"
 import { Context, Duration, Effect, Exit, Fiber, Layer, Option } from "effect"
 import { EffectFlock } from "@opencode-ai/shared/util/effect-flock"
 import { InstanceRef } from "@/effect/instance-ref"
-import { Npm } from "@opencode-ai/shared/npm"
 import { ConfigAgent } from "./agent"
+import { ConfigCommand } from "./command"
+import { ConfigFormatter } from "./formatter"
+import { ConfigLayout } from "./layout"
+import { ConfigLSP } from "./lsp"
+import { ConfigManaged } from "./managed"
 import { ConfigMCP } from "./mcp"
 import { ConfigModelID } from "./model-id"
-import { ConfigPlugin } from "./plugin"
-import { ConfigManaged } from "./managed"
-import { ConfigCommand } from "./command"
 import { ConfigParse } from "./parse"
-import { ConfigPermission } from "./permission"
-import { ConfigProvider } from "./provider"
-import { ConfigSkills } from "./skills"
 import { ConfigPaths } from "./paths"
-import { ConfigFormatter } from "./formatter"
-import { ConfigLSP } from "./lsp"
+import { ConfigPermission } from "./permission"
+import { ConfigPlugin } from "./plugin"
+import { ConfigProvider } from "./provider"
+import { ConfigServer } from "./server"
+import { ConfigSkills } from "./skills"
 import { ConfigVariable } from "./variable"
+import { Npm } from "@/npm"
 
 const log = Log.create({ service: "config" })
 
@@ -73,23 +75,9 @@ async function resolveLoadedPlugins<T extends { plugin?: ConfigPlugin.Spec[] }>(
   return config
 }
 
-export const Server = z
-  .object({
-    port: z.number().int().positive().optional().describe("Port to listen on"),
-    hostname: z.string().optional().describe("Hostname to listen on"),
-    mdns: z.boolean().optional().describe("Enable mDNS service discovery"),
-    mdnsDomain: z.string().optional().describe("Custom domain name for mDNS service (default: opencode.local)"),
-    cors: z.array(z.string()).optional().describe("Additional domains to allow for CORS"),
-  })
-  .strict()
-  .meta({
-    ref: "ServerConfig",
-  })
-
-export const Layout = z.enum(["auto", "stretch"]).meta({
-  ref: "LayoutConfig",
-})
-export type Layout = z.infer<typeof Layout>
+export const Server = ConfigServer.Server.zod
+export const Layout = ConfigLayout.Layout.zod
+export type Layout = ConfigLayout.Layout
 
 export const Info = z
   .object({
@@ -97,10 +85,10 @@ export const Info = z
     logLevel: Log.Level.optional().describe("Log level"),
     server: Server.optional().describe("Server configuration for opencode serve and web commands"),
     command: z
-      .record(z.string(), ConfigCommand.Info)
+      .record(z.string(), ConfigCommand.Info.zod)
       .optional()
       .describe("Command configuration, see https://opencode.ai/docs/commands"),
-    skills: ConfigSkills.Info.optional().describe("Additional skill folder paths"),
+    skills: ConfigSkills.Info.zod.optional().describe("Additional skill folder paths"),
     watcher: z
       .object({
         ignore: z.array(z.string()).optional(),
@@ -113,7 +101,7 @@ export const Info = z
         "Enable or disable snapshot tracking. When false, filesystem snapshots are not recorded and undoing or reverting will not undo/redo file changes. Defaults to true.",
       ),
     // User-facing plugin config is stored as Specs; provenance gets attached later while configs are merged.
-    plugin: ConfigPlugin.Spec.array().optional(),
+    plugin: ConfigPlugin.Spec.zod.array().optional(),
     share: z
       .enum(["manual", "auto", "disabled"])
       .optional()
@@ -135,10 +123,10 @@ export const Info = z
       .array(z.string())
       .optional()
       .describe("When set, ONLY these providers will be enabled. All other providers will be ignored"),
-    model: ConfigModelID.describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
-    small_model: ConfigModelID.describe(
-      "Small model to use for tasks like title generation in the format of provider/model",
-    ).optional(),
+    model: ConfigModelID.zod.describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
+    small_model: ConfigModelID.zod
+      .describe("Small model to use for tasks like title generation in the format of provider/model")
+      .optional(),
     default_agent: z
       .string()
       .optional()
@@ -171,14 +159,14 @@ export const Info = z
       .optional()
       .describe("Agent configuration, see https://opencode.ai/docs/agents"),
     provider: z
-      .record(z.string(), ConfigProvider.Info)
+      .record(z.string(), ConfigProvider.Info.zod)
       .optional()
       .describe("Custom provider configurations and model overrides"),
     mcp: z
       .record(
         z.string(),
         z.union([
-          ConfigMCP.Info,
+          ConfigMCP.Info.zod,
           z
             .object({
               enabled: z.boolean(),
@@ -188,8 +176,8 @@ export const Info = z
       )
       .optional()
       .describe("MCP (Model Context Protocol) server configurations"),
-    formatter: ConfigFormatter.Info.optional(),
-    lsp: ConfigLSP.Info.optional(),
+    formatter: ConfigFormatter.Info.zod.optional(),
+    lsp: ConfigLSP.Info.zod.optional(),
     instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
     layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
     permission: ConfigPermission.Info.optional(),
@@ -518,7 +506,12 @@ export const layer = Layer.effect(
 
           const dep = yield* npmSvc
             .install(dir, {
-              add: ["@opencode-ai/plugin" + (InstallationLocal ? "" : "@" + InstallationVersion)],
+              add: [
+                {
+                  name: "@opencode-ai/plugin",
+                  version: InstallationLocal ? undefined : InstallationVersion,
+                },
+              ],
             })
             .pipe(
               Effect.exit,
