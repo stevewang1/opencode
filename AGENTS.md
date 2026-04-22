@@ -1,103 +1,43 @@
-- To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
-- ALWAYS USE PARALLEL TOOLS WHEN APPLICABLE.
-- The default branch in this repo is `dev`.
-- Local `main` ref may not exist; use `dev` or `origin/dev` for diffs.
-- Prefer automation: execute requested actions without confirmation unless blocked by missing info or safety/irreversibility.
+# OpenCode Repo Notes
 
-## Style Guide
+- Default branch is `dev`; `origin/HEAD` points to `origin/dev`. Diff and open PRs against `dev` or `origin/dev`, not `main`.
+- Use Bun `1.3.11` from the root `packageManager`. `.husky/pre-push` checks the Bun version and runs `bun typecheck`.
+- Root commands: `bun dev` runs the CLI/TUI from `packages/opencode`; `bun typecheck` is the repo-wide Turbo check; `bun lint` runs `oxlint`; root `bun test` is an intentional guard that always fails.
+- Run tests from package directories or with `--cwd`, not from repo root.
 
-### General Principles
+## Package Map
 
-- Keep things in one function unless composable or reusable
-- Avoid `try`/`catch` where possible
-- Avoid using the `any` type
-- Use Bun APIs when possible, like `Bun.file()`
-- Rely on type inference when possible; avoid explicit type annotations or interfaces unless necessary for exports or clarity
-- Prefer functional array methods (flatMap, filter, map) over for loops; use type guards on filter to maintain type inference downstream
-- In `src/config`, follow the existing self-export pattern at the top of the file (for example `export * as ConfigAgent from "./agent"`) when adding a new config module.
+- `packages/opencode`: main CLI, headless server, and TUI. Entry point is `packages/opencode/src/index.ts`.
+- `packages/app`: shared web UI used by the desktop shells and Playwright e2e tests.
+- `packages/desktop`: Tauri desktop wrapper around `packages/app`.
+- `packages/desktop-electron`: Electron desktop wrapper around `packages/app`.
+- `packages/console/app`: separate console/site app, not the same app as `packages/app`.
 
-Reduce total variable count by inlining when a value is only used once.
+## Generated Code
 
-```ts
-// Good
-const journal = await Bun.file(path.join(dir, "journal.json")).json()
+- If you change API surfaces or SDK-related files, run `./script/generate.ts` from the repo root. It rebuilds the JS SDK, refreshes OpenAPI output from `packages/opencode`, then runs repo formatting.
+- To rebuild only the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
+- `packages/opencode/script/build.ts` is the CLI release build. It builds `packages/app` and embeds that web UI into the binary unless `--skip-embed-web-ui` is passed.
 
-// Bad
-const journalPath = path.join(dir, "journal.json")
-const journal = await Bun.file(journalPath).json()
-```
+## Verification
 
-### Destructuring
+- CLI/server package: `bun --cwd packages/opencode test` or `bun --cwd packages/opencode test:ci`.
+- Web app unit tests: `bun --cwd packages/app test:unit`.
+- Web app e2e: `bun --cwd packages/app test:e2e:local -- --grep "<name>"` for a focused run.
+- Playwright starts the Vite app itself, but it expects an OpenCode backend at `127.0.0.1:4096` unless `PLAYWRIGHT_SERVER_HOST` / `PLAYWRIGHT_SERVER_PORT` are overridden.
 
-Avoid unnecessary destructuring. Use dot notation to preserve context.
+## Frontend Gotcha
 
-```ts
-// Good
-obj.a
-obj.b
+- Do not use `opencode dev web` or root `bun dev web` to verify local UI/CSS changes. When embedded UI is disabled, the server route proxies `https://app.opencode.ai`.
+- For local UI work, run the backend and app separately: from `packages/opencode`, `bun run --conditions=browser ./src/index.ts serve --port 4096`; from `packages/app`, `bun dev -- --port 4444`; then open `http://localhost:4444`.
 
-// Bad
-const { a, b } = obj
-```
+## PR Rules
 
-### Variables
+- PR titles are enforced by CI: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, or `test:` with optional scope.
+- Non-`docs`/`refactor`/`feat` PRs must link an issue with `Fixes #...` or `Closes #...`.
+- PR bodies are checked for the standard template sections from `.github/pull_request_template.md`.
 
-Prefer `const` over `let`. Use ternaries or early returns instead of reassignment.
+## Local Instructions
 
-```ts
-// Good
-const foo = condition ? 1 : 2
-
-// Bad
-let foo
-if (condition) foo = 1
-else foo = 2
-```
-
-### Control Flow
-
-Avoid `else` statements. Prefer early returns.
-
-```ts
-// Good
-function foo() {
-  if (condition) return 1
-  return 2
-}
-
-// Bad
-function foo() {
-  if (condition) return 1
-  else return 2
-}
-```
-
-### Schema Definitions (Drizzle)
-
-Use snake_case for field names so column names don't need to be redefined as strings.
-
-```ts
-// Good
-const table = sqliteTable("session", {
-  id: text().primaryKey(),
-  project_id: text().notNull(),
-  created_at: integer().notNull(),
-})
-
-// Bad
-const table = sqliteTable("session", {
-  id: text("id").primaryKey(),
-  projectID: text("project_id").notNull(),
-  createdAt: integer("created_at").notNull(),
-})
-```
-
-## Testing
-
-- Avoid mocks as much as possible
-- Test actual implementation, do not duplicate logic into tests
-- Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/opencode`.
-
-## Type Checking
-
-- Always run `bun typecheck` from package directories (e.g., `packages/opencode`), never `tsc` directly.
+- Before editing inside `packages/opencode`, `packages/opencode/test`, `packages/app`, `packages/desktop`, or `packages/desktop-electron`, read that directory's own `AGENTS.md` first.
+- Prefer executable config over package READMEs when they conflict. `packages/app/README.md` and `packages/opencode/README.md` contain stale template-era instructions.
