@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto"
 import { EventEmitter } from "node:events"
 import { existsSync } from "node:fs"
+import * as http from "node:http"
 import { createServer } from "node:net"
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { getCACertificates, setDefaultCACertificates } from "node:tls"
 import type { Event } from "electron"
 import { app, BrowserWindow, dialog } from "electron"
 import pkg from "electron-updater"
@@ -65,6 +67,8 @@ const pendingDeepLinks: string[] = []
 const serverReady = defer<ServerReadyData>()
 const logger = initLogging()
 
+useSystemCertificates()
+
 logger.log("app starting", {
   version: app.getVersion(),
   packaged: app.isPackaged,
@@ -74,6 +78,7 @@ setupApp()
 
 function setupApp() {
   ensureLoopbackNoProxy()
+  useEnvProxy()
   app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>")
   if (!app.isPackaged) app.commandLine.appendSwitch("remote-debugging-port", "9222")
 
@@ -120,6 +125,23 @@ function setupApp() {
     setupAutoUpdater()
     await initialize()
   })
+}
+
+function useSystemCertificates() {
+  try {
+    setDefaultCACertificates([...new Set([...getCACertificates("default"), ...getCACertificates("system")])])
+  } catch (error) {
+    logger.warn("failed to load system certificates", error)
+  }
+}
+
+function useEnvProxy() {
+  try {
+    // Electron 41.2 runs Node 24.14.1; latest @types/node@24 is 24.12.2.
+    ;(http as any).setGlobalProxyFromEnv()
+  } catch (error) {
+    logger.warn("failed to load proxy environment", error)
+  }
 }
 
 function emitDeepLinks(urls: string[]) {
@@ -178,7 +200,10 @@ async function initialize() {
     }
 
     logger.log("spawning sidecar", { url })
-    const { listener, health } = await spawnLocalServer(hostname, port, password)
+    const { listener, health } = await spawnLocalServer(hostname, port, password, () => {
+      ensureLoopbackNoProxy()
+      useEnvProxy()
+    })
     server = listener
     serverReady.resolve({
       url,
