@@ -7,11 +7,22 @@
 
 ## Package Map
 
+<<<<<<< HEAD
 - `packages/opencode`: main CLI, headless server, and TUI. Entry point is `packages/opencode/src/index.ts`.
 - `packages/app`: shared web UI used by the desktop shells and Playwright e2e tests.
 - `packages/desktop`: Tauri desktop wrapper around `packages/app`.
 - `packages/desktop-electron`: Electron desktop wrapper around `packages/app`.
 - `packages/console/app`: separate console/site app, not the same app as `packages/app`.
+=======
+- Keep things in one function unless composable or reusable
+- Do not extract single-use helpers preemptively. Inline the logic at the call site unless the helper is reused, hides a genuinely complex boundary, or has a clear independent name that improves the caller.
+- Avoid `try`/`catch` where possible
+- Avoid using the `any` type
+- Use Bun APIs when possible, like `Bun.file()`
+- Rely on type inference when possible; avoid explicit type annotations or interfaces unless necessary for exports or clarity
+- Prefer functional array methods (flatMap, filter, map) over for loops; use type guards on filter to maintain type inference downstream
+- In `src/config`, follow the existing self-export pattern at the top of the file (for example `export * as ConfigAgent from "./agent"`) when adding a new config module.
+>>>>>>> 77e6c0d329ee568818bcf495f2b8b858b286e453
 
 ## Generated Code
 
