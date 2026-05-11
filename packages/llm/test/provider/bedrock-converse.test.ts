@@ -63,6 +63,9 @@ const baseRequest = LLM.request({
   model,
   system: "You are concise.",
   prompt: "Say hello.",
+  // Wire-shape assertions in this file predate the `cache: "auto"` default;
+  // pin the policy off so they only exercise the lowering path itself.
+  cache: "none",
   generation: { maxTokens: 64, temperature: 0 },
 })
 
@@ -125,6 +128,7 @@ describe("Bedrock Converse route", () => {
             LLM.assistant([LLM.toolCall({ id: "tool_1", name: "lookup", input: { query: "weather" } })]),
             LLM.toolMessage({ id: "tool_1", name: "lookup", result: { forecast: "sunny" } }),
           ],
+          cache: "none",
         }),
       )
 
@@ -339,6 +343,7 @@ describe("Bedrock Converse route", () => {
               { type: "media", mediaType: "image/webp", data: "DDDD" },
             ]),
           ],
+          cache: "none",
         }),
       )
 
@@ -464,14 +469,13 @@ describe("Bedrock Converse route", () => {
       const prepared = yield* LLMClient.prepare(
         LLM.request({
           model,
-          tools: [
-            { name: "lookup", description: "lookup", inputSchema: { type: "object", properties: {} }, cache },
-          ],
+          tools: [{ name: "lookup", description: "lookup", inputSchema: { type: "object", properties: {} }, cache }],
           messages: [
             LLM.user("What's the weather?"),
             LLM.assistant([LLM.toolCall({ id: "call_1", name: "lookup", input: {} })]),
             LLM.toolMessage({ id: "call_1", name: "lookup", result: { temp: 72 }, cache }),
           ],
+          cache: "none",
         }),
       )
 
@@ -557,6 +561,7 @@ describe("Bedrock Converse recorded", () => {
           model: recordedModel(),
           system: "Reply with the single word 'Hello'.",
           prompt: "Say hello.",
+          cache: "none",
           generation: { maxTokens: 16, temperature: 0 },
         }),
       )
@@ -579,6 +584,7 @@ describe("Bedrock Converse recorded", () => {
           prompt: "Call get_weather with city exactly Paris.",
           tools: [weatherTool],
           toolChoice: LLM.toolChoice(weatherTool),
+          cache: "none",
           generation: { maxTokens: 80, temperature: 0 },
         }),
       )
