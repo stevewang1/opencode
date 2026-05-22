@@ -1,9 +1,21 @@
 # OpenCode Repo Notes
 
+<<<<<<< HEAD
 - Default branch is `dev`; `origin/HEAD` points to `origin/dev`. Diff and open PRs against `dev` or `origin/dev`, not `main`.
 - Use Bun `1.3.11` from the root `packageManager`. `.husky/pre-push` checks the Bun version and runs `bun typecheck`.
 - Root commands: `bun dev` runs the CLI/TUI from `packages/opencode`; `bun typecheck` is the repo-wide Turbo check; `bun lint` runs `oxlint`; root `bun test` is an intentional guard that always fails.
 - Run tests from package directories or with `--cwd`, not from repo root.
+=======
+## Commits and PR Titles
+
+Use conventional commit-style messages and PR titles: `type(scope): summary`.
+
+Valid types are `feat`, `fix`, `docs`, `chore`, `refactor`, and `test`. Scopes are optional; use the affected package or area when helpful, e.g. `core`, `opencode`, `tui`, `app`, `desktop`, `sdk`, or `plugin`.
+
+Examples: `fix(tui): simplify thinking toggle styling`, `docs: update contributing guide`, `chore(sdk): regenerate types`.
+
+## Style Guide
+>>>>>>> ad1d14775d9396b5bbda34b11f38ca95e1315696
 
 ## Package Map
 
