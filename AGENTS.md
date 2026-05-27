@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 # OpenCode Repo Notes
+=======
+- To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
+- The default branch in this repo is `dev`.
+- Local `main` ref may not exist; use `dev` or `origin/dev` for diffs.
+>>>>>>> 0f0a4be2538038bcde534f0b5454fbf834cc2574
 
 <<<<<<< HEAD
 - Default branch is `dev`; `origin/HEAD` points to `origin/dev`. Diff and open PRs against `dev` or `origin/dev`, not `main`.
