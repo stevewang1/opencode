@@ -62,9 +62,19 @@ Examples: `fix(tui): simplify thinking toggle styling`, `docs: update contributi
 
 ## PR Rules
 
+<<<<<<< HEAD
 - PR titles are enforced by CI: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, or `test:` with optional scope.
 - Non-`docs`/`refactor`/`feat` PRs must link an issue with `Fixes #...` or `Closes #...`.
 - PR bodies are checked for the standard template sections from `.github/pull_request_template.md`.
+=======
+### Imports
+
+- Never alias imports. Do not use `import { foo as bar } from "..."` or renamed imports like `resolve as pathResolve`.
+- Never use star imports. Do not use `import * as Foo from "..."` or `import type * as Foo from "..."`.
+- If a namespace-style value is needed, import the module's own exported namespace by name, for example `import { Project } from "@opencode-ai/core/project"`, then reference `Project.ID`.
+
+### Variables
+>>>>>>> a821029258fd7bded02d965e5c08f928257b398a
 
 ## Local Instructions
 
