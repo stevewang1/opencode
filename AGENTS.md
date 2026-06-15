@@ -7,11 +7,20 @@
 >>>>>>> 0f0a4be2538038bcde534f0b5454fbf834cc2574
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 - Default branch is `dev`; `origin/HEAD` points to `origin/dev`. Diff and open PRs against `dev` or `origin/dev`, not `main`.
 - Use Bun `1.3.11` from the root `packageManager`. `.husky/pre-push` checks the Bun version and runs `bun typecheck`.
 - Root commands: `bun dev` runs the CLI/TUI from `packages/opencode`; `bun typecheck` is the repo-wide Turbo check; `bun lint` runs `oxlint`; root `bun test` is an intentional guard that always fails.
 - Run tests from package directories or with `--cwd`, not from repo root.
 =======
+=======
+## Branch Names
+
+Use a short branch name of at most three words, separated by hyphens. Do not use slashes or type prefixes such as `feat/` or `fix/`.
+
+Examples: `session-recovery`, `fix-scroll-state`, `regenerate-sdk`.
+
+>>>>>>> 5d0f86606ac30690f79f0a6a9f41a1f49fe95d0b
 ## Commits and PR Titles
 
 Use conventional commit-style messages and PR titles: `type(scope): summary`.
